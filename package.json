@@ -26,12 +26,18 @@
   "homepage": "https://github.com/zarkone/csvproxy#readme",
   "dependencies": {
     "@types/express": "^4.17.6",
+    "@types/express-pino-logger": "^4.0.2",
     "@types/mongoose": "^5.7.14",
     "concurrently": "^5.2.0",
     "express": "^4.17.1",
+    "express-pino-logger": "^5.0.0",
     "global": "^4.4.0",
     "mongoose": "^5.9.11",
+    "pino": "^6.2.1",
     "ts-node": "^8.9.1",
     "typescript": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/pino": "^6.0.0"
   }
 }
