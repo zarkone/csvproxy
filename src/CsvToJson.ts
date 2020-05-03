@@ -1,6 +1,12 @@
 import axios, { AxiosResponse } from "axios";
+
 import { parse } from "@fast-csv/parse";
 import { Stream, Writable } from "stream";
+import { Result, Ok, Err, err, ok } from "neverthrow";
+import { CsvRecord } from "./CsvRecord";
+import { text } from "express";
+
+type DecodeErr = string;
 
 function isUrl(url: string): boolean {
   try {
@@ -10,33 +16,57 @@ function isUrl(url: string): boolean {
     return false;
   }
 }
-function readableToString(readable: Stream): Promise<Array<Object>> {
+
+function readableToString<T>(
+  readable: Stream
+): Promise<Result<T[], DecodeErr>> {
   return new Promise((resolve, reject) => {
-    let data: Array<Object> = [];
+    let data: T[] = [];
     readable.on("data", function (chunk) {
+      console.log("debug1", chunk);
       data.push(chunk);
     });
     readable.on("end", function () {
-      resolve(data);
+      console.log("end!");
+      resolve(ok(data));
     });
-    readable.on("error", function (err) {
-      reject(err);
+
+    readable.on("error", function (error) {
+      reject(error);
     });
   });
 }
 
-export default async function csvToJson(csv: string): Promise<Object> {
-  const csvStream = parse({ headers: true });
+export default async function csvToJson(
+  csvMaybeUrl: string
+): Promise<Result<{ json: CsvRecord[]; csv: string }, DecodeErr>> {
+  const toJsonStream = parse({ headers: true });
 
-  if (isUrl(csv)) {
-    axios
-      .get(csv, { responseType: "stream" })
-      .then((r: AxiosResponse<Stream>) => {
-        r.data.pipe(csvStream);
-      });
+  let csv: string;
+
+  if (isUrl(csvMaybeUrl)) {
+    let { data } = await axios.get(csvMaybeUrl);
+    csv = data;
+    toJsonStream.write(data);
+    toJsonStream.end();
   } else {
-    csvStream.write(csv);
+    csv = csvMaybeUrl;
+    toJsonStream.write(csvMaybeUrl);
+    toJsonStream.end();
   }
 
-  return readableToString(csvStream);
+  const json = await readableToString<CsvRecord>(toJsonStream);
+  console.log("debug2", json);
+  return new Promise((resolve, reject) => {
+    if (json.isOk()) {
+      resolve(
+        new Ok({
+          json: json.value,
+          csv,
+        })
+      );
+    } else {
+      reject(new Err("Decode error"));
+    }
+  });
 }

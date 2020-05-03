@@ -12,11 +12,39 @@ app.use(expressPinoLogger({ logger }));
 app.set("port", process.env.PORT || 3000);
 
 // API Endpoints
+
 app.get("/csv/:id", async (req: Request, res: Response) => {
   try {
-    let csvRes = await Csv.findById(req.params.id).exec();
+    const parsedParams = req.params.id.match(/(.*)\.(.*)/);
+    let id: string, format: string;
+
+    if (parsedParams) {
+      id = parsedParams[1];
+      format = parsedParams[2];
+    } else {
+      id = format = "";
+    }
+
+    let csvRes = await Csv.findById(id).exec();
     if (csvRes) {
-      return res.send(csvRes);
+      switch (format) {
+        case "json":
+          {
+            return res.send(csvRes.json);
+          }
+          break;
+        case "csv":
+          {
+            res.setHeader("Content-Type", "text/csv");
+            return res.send(csvRes.csv);
+          }
+          break;
+        default:
+          {
+            res.status(400).send("Wrong format: " + format);
+          }
+          break;
+      }
     } else {
       return res.status(404).send({ error: "Not found" });
     }
@@ -27,12 +55,18 @@ app.get("/csv/:id", async (req: Request, res: Response) => {
 });
 
 app.post("/csv", async (req: Request, res: Response) => {
-  const csv = req.body.csv;
-  const json = await csvToJson(csv);
-  const csvModel = new Csv({ csv, json });
-  csvModel.save();
+  const csvMaybeUrl = req.body.csv;
+  const result = await csvToJson(csvMaybeUrl);
+  if (result.isOk()) {
+    const { csv, json } = result.value;
+    const csvModel = new Csv({ csv, json });
 
-  res.status(201).send({ url: "/csv/" + csvModel._id });
+    csvModel.save();
+
+    res.status(201).send({ url: "/csv/" + csvModel._id });
+  } else {
+    res.status(500).send("Internal Error: " + result.error);
+  }
 });
 
 const server = app.listen(app.get("port"), () => {

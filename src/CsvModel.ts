@@ -1,12 +1,5 @@
-import mongoose from "mongoose";
-import mongoseStreamPlugin from "mongoose-write-stream";
-import {
-  createSchema,
-  Type,
-  typedModel,
-  ExtractDoc,
-  ExtractProps,
-} from "ts-mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+import { CsvRecord } from "./CsvRecord";
 
 const uri: string = "mongodb://127.0.0.1:27017/local";
 
@@ -18,14 +11,14 @@ mongoose.connect(uri, (err: any) => {
   }
 });
 
-export interface ICsv extends mongoose.Document {
+export interface ICsv extends Document {
   csv: string;
-  json: string;
+  json: [CsvRecord];
 }
 
-export const CsvSchema = new mongoose.Schema({
-  csv: { type: String, required: true },
-  json: { type: String, required: true },
+export const CsvSchema = new Schema<ICsv>({
+  csv: String,
+  json: Schema.Types.Mixed,
 });
 
 export const Csv = mongoose.model<ICsv>("Csv", CsvSchema);
