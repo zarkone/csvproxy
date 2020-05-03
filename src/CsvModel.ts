@@ -1,4 +1,12 @@
 import mongoose from "mongoose";
+import mongoseStreamPlugin from "mongoose-write-stream";
+import {
+  createSchema,
+  Type,
+  typedModel,
+  ExtractDoc,
+  ExtractProps,
+} from "ts-mongoose";
 
 const uri: string = "mongodb://127.0.0.1:27017/local";
 

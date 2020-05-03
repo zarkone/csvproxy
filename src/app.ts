@@ -1,9 +1,10 @@
 import express, { Request, Response } from "express";
-import { Csv, ICsv } from "./csv";
+import { Csv, ICsv } from "./CsvModel";
+import csvToJson from "./CsvToJson";
 import { logger } from "./Logger";
 import expressPinoLogger from "express-pino-logger";
 
-// Our Express APP config
+// Express APP config
 const app = express();
 
 app.use(express.json());
@@ -25,14 +26,13 @@ app.get("/csv/:id", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/csv", (req: Request, res: Response) => {
-  let csv = req.body.csv;
-  let json = "{}";
-  let csvModel = new Csv({ csv, json });
-
+app.post("/csv", async (req: Request, res: Response) => {
+  const csv = req.body.csv;
+  const json = await csvToJson(csv);
+  const csvModel = new Csv({ csv, json });
   csvModel.save();
 
-  res.send({ id: csvModel._id });
+  res.status(201).send({ url: "/csv/" + csvModel._id });
 });
 
 const server = app.listen(app.get("port"), () => {
