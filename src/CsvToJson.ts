@@ -24,11 +24,9 @@ function readableToString<T>(
   return new Promise((resolve, reject) => {
     let data: T[] = [];
     readable.on("data", function (chunk) {
-      console.log("debug1", chunk);
       data.push(chunk);
     });
     readable.on("end", function () {
-      console.log("end!");
       resolve(ok(data));
     });
 
@@ -39,8 +37,8 @@ function readableToString<T>(
 }
 
 export default async function csvToJson(params: {
-  url: string | null;
-  csv: string | null;
+  url?: string | null;
+  csv?: string | null;
 }): Promise<
   Result<{ json: CsvRecord[]; csv: string }, DecodeErr | NoValueErr>
 > {
@@ -63,7 +61,7 @@ export default async function csvToJson(params: {
   toJsonStream.end();
 
   const json = await readableToString<CsvRecord>(toJsonStream);
-  console.log("debug2", json);
+
   return new Promise((resolve, reject) => {
     if (json.isOk()) {
       resolve(
