@@ -68,6 +68,21 @@ app.post("/csv", async (req: Request, res: Response) => {
     res.status(500).send("Internal Error: " + result.error);
   }
 });
+app.get("/proxy", async (req: Request, res: Response) => {
+  const { url }: { url?: string | null } = req.query;
+  if (!url) {
+    return res.status(400).send("query parameter `url` is required.");
+  }
+
+  const result = await csvToJson({ url });
+
+  if (result.isOk()) {
+    const { json } = result.value;
+    res.status(200).send(json);
+  } else {
+    res.status(500).send("Internal Error: " + result.error);
+  }
+});
 
 const server = app.listen(app.get("port"), () => {
   console.log("App is running on http://localhost:%d", app.get("port"));
