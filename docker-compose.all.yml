@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  csvproxy:
+    image: zarkone/csvproxy:latest
+    ports:
+      - 3000:3000
+    environment:
+      MONGO_URL: mongodb://mongo:27017/local
+  mongo:
+    image: mongo
