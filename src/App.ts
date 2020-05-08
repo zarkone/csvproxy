@@ -55,8 +55,8 @@ app.get("/csv/:id", async (req: Request, res: Response) => {
 });
 
 app.post("/csv", async (req: Request, res: Response) => {
-  const csvMaybeUrl = req.body.csv;
-  const result = await csvToJson(csvMaybeUrl);
+  const { csv, url } = req.body;
+  const result = await csvToJson({ csv, url });
   if (result.isOk()) {
     const { csv, json } = result.value;
     const csvModel = new Csv({ csv, json });

@@ -7,6 +7,7 @@ import { CsvRecord } from "./CsvRecord";
 import { text } from "express";
 
 type DecodeErr = string;
+type NoValueErr = string;
 
 function isUrl(url: string): boolean {
   try {
@@ -37,23 +38,29 @@ function readableToString<T>(
   });
 }
 
-export default async function csvToJson(
-  csvMaybeUrl: string
-): Promise<Result<{ json: CsvRecord[]; csv: string }, DecodeErr>> {
+export default async function csvToJson(params: {
+  url: string | null;
+  csv: string | null;
+}): Promise<
+  Result<{ json: CsvRecord[]; csv: string }, DecodeErr | NoValueErr>
+> {
+  const { url, csv } = params;
   const toJsonStream = parse({ headers: true });
+  let resultCsv: string;
 
-  let csv: string;
-
-  if (isUrl(csvMaybeUrl)) {
-    let { data } = await axios.get(csvMaybeUrl);
-    csv = data;
-    toJsonStream.write(data);
-    toJsonStream.end();
+  if (url) {
+    let { data } = await axios.get(url);
+    resultCsv = data;
+  } else if (csv) {
+    resultCsv = csv;
   } else {
-    csv = csvMaybeUrl;
-    toJsonStream.write(csvMaybeUrl);
-    toJsonStream.end();
+    return new Promise((resolve, reject) => {
+      resolve(new Err("No csv  url provided"));
+    });
   }
+
+  toJsonStream.write(resultCsv);
+  toJsonStream.end();
 
   const json = await readableToString<CsvRecord>(toJsonStream);
   console.log("debug2", json);
@@ -62,7 +69,7 @@ export default async function csvToJson(
       resolve(
         new Ok({
           json: json.value,
-          csv,
+          csv: resultCsv,
         })
       );
     } else {
